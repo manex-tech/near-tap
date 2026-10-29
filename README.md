@@ -1,39 +1,48 @@
-# NEAR Tap
+# NEAR Tap: Proof of Presence
 
-A minimal ESP32 button-triggered NEAR **testnet** transfer prototype.
+NEAR Tap is an ESP32 proof-of-presence prototype. Press the onboard BOOT button to create a check-in event. The ESP32 sends that event to a small Node.js relay, which records a timestamp in preview mode.
 
-Press the ESP32's onboard BOOT button. The board sends an authenticated request to a Node.js relay, which submits a fixed-size testnet transfer to a configured `.testnet` account.
+## Current status
 
-## Safety and scope
+**Preview only. Not yet on-chain.** The relay currently logs presence events in memory. It does not send NEAR tokens, deploy a smart contract, or write data to NEAR testnet. The next development milestone is to anchor presence events to NEAR testnet without introducing any payment behavior.
 
-- Testnet only. This is not for mainnet or real funds.
-- The recipient and amount are configured on the relay, not supplied by the ESP32.
-- Keep the NEAR private key on the relay host. Never put it in firmware or commit it to GitHub.
-- The relay requires a shared device token and applies a cooldown to reduce accidental repeated transfers.
-- Verify the transaction hash on the NEAR testnet explorer before claiming payment success.
-- This first version does not deploy a smart contract. It demonstrates a real NEAR testnet transfer triggered by physical hardware.
+## Hardware
+
+- ESP32-WROOM-32 development board
+- USB data cable
+- Wi-Fi network
+- Computer running Node.js to host the relay
+
+No extra sensors are required. The onboard BOOT button is used as the check-in trigger.
+
+## Safety
+
+- No payment code or wallet private key is required for the preview.
+- Never commit Wi-Fi passwords or device tokens.
+- A button press demonstrates an event, not a person's verified identity or physical location.
+- Do not claim an event is on-chain until a transaction has been confirmed on NEAR testnet.
 
 ## Repository layout
 
-- `server.js`: authenticated Node.js relay using `near-api-js`
+- `server.js`: authenticated preview relay that logs presence events
 - `firmware/`: ESP32 firmware for PlatformIO
-- `.github/workflows/near-tap.yml`: automated syntax checks
+- `.github/workflows/near-tap.yml`: automated JavaScript syntax check
 
-## Configuration
+## Relay configuration
 
-Set these environment variables on the machine hosting the relay:
+Set `TAP_DEVICE_TOKEN` on the computer running the relay. The same token goes in your local `firmware/secrets.h`, which is ignored by Git.
 
-- `NEAR_ACCOUNT_ID`: funded NEAR testnet account, e.g. `yourname.testnet`
-- `NEAR_PRIVATE_KEY`: private key for that testnet account, format `ed25519:...`
-- `NEAR_RECIPIENT_ID`: destination account ending in `.testnet`
-- `TAP_DEVICE_TOKEN`: long random secret shared with the ESP32 firmware
+The relay listens on port 8787 by default. In `firmware/secrets.h`, set `TAP_RELAY_URL` to `http://YOUR_COMPUTER_LAN_IP:8787/api/presence`. Do not use `localhost` as the ESP32's destination.
 
-The transfer amount is fixed at **0.001 NEAR** in code. The relay rejects non-testnet account IDs and does not accept a destination or amount from the ESP32.
+## Firmware setup
 
-## Important limitation
+Copy `firmware/secrets.example.h` to `firmware/secrets.h` locally and enter your Wi-Fi name, Wi-Fi password, relay URL, and shared device token. Do not commit the real file.
 
-GitHub stores the source and runs checks, but it cannot flash firmware to your physical ESP32 by itself. The firmware must eventually be compiled and uploaded to the board from a computer using PlatformIO or another ESP32 toolchain. The relay must also run on a reachable computer or host with its secrets configured.
+GitHub can store code and run checks, but it cannot flash firmware to the physical ESP32. Firmware upload will require a local ESP32 toolchain such as PlatformIO in VS Code.
 
-## Development status
+## Planned milestones
 
-Scaffold only. Not yet compiled against hardware or verified with a successful onchain transaction.
+1. Detect the BOOT button and log a presence event.
+2. Confirm the ESP32 can reach the preview relay.
+3. Add NEAR testnet anchoring for presence events.
+4. Verify the resulting transaction on a public testnet explorer.
