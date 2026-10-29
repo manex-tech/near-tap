@@ -1,7 +1,7 @@
 import http from "node:http";
 import { timingSafeEqual } from "node:crypto";
 import { Account, JsonRpcProvider } from "near-api-js";
-import { NEAR } from "near-api-js/tokens";
+import { nearToYocto } from "near-api-js";
 
 const PORT = Number(process.env.PORT || 8787);
 const ACCOUNT_ID = process.env.NEAR_ACCOUNT_ID || "";
@@ -92,8 +92,7 @@ const server = http.createServer(async (req, res) => {
     const provider = new JsonRpcProvider({ url: RPC_URL });
     const account = new Account(ACCOUNT_ID, provider, PRIVATE_KEY);
     const result = await account.transfer({
-      token: NEAR,
-      amount: NEAR.toUnits(TRANSFER_AMOUNT),
+      amount: nearToYocto(TRANSFER_AMOUNT),
       receiverId: RECIPIENT_ID
     });
 
