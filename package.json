@@ -1,0 +1,14 @@
+{
+  "name": "near-tap",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ESP32-triggered fixed NEAR testnet transfer prototype",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  },
+  "dependencies": {
+    "near-api-js": "^7.3.1"
+  }
+}
