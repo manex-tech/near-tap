@@ -6,5 +6,5 @@
 
 // Use your computer's LAN IPv4 address when ESP32 and computer share Wi-Fi.
 // Do not use localhost here.
-#define TAP_RELAY_URL "http://192.168.1.100:8787/api/trigger"
+#define TAP_RELAY_URL "http://192.168.1.100:8787/api/presence"
 #define TAP_DEVICE_TOKEN "REPLACE_WITH_THE_SAME_RANDOM_TOKEN_AS_TAP_DEVICE_TOKEN"
