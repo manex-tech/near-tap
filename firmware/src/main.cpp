@@ -28,9 +28,11 @@ void connectWiFi() {
   }
 }
 
-void triggerNearTransfer() {
+void recordPresence() {
+  Serial.println("Presence event detected.");
+
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Not sent: Wi-Fi is disconnected.");
+    Serial.println("Local button event detected, but not sent: Wi-Fi is disconnected.");
     return;
   }
 
@@ -42,19 +44,19 @@ void triggerNearTransfer() {
     return;
   }
 
-  http.setTimeout(15000);
+  http.setTimeout(10000);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("x-tap-token", TAP_DEVICE_TOKEN);
 
-  const int status = http.POST("{\"deviceId\":\"near-tap-esp32\"}");
+  const int status = http.POST("{\"deviceId\":\"near-tap-esp32\",\"event\":\"presence\"}");
   const String response = http.getString();
 
-  Serial.printf("Relay HTTP status: %d\n", status);
+  Serial.printf("Presence relay HTTP status: %d\n", status);
   Serial.println(response);
   if (status == 200) {
-    Serial.println("Relay accepted the request. Verify the transaction hash on NEAR testnet before claiming payment success.");
+    Serial.println("Presence recorded by the preview relay. This is not yet an on-chain NEAR record.");
   } else {
-    Serial.println("Request was not confirmed. Check the response and explorer before retrying.");
+    Serial.println("Presence was not confirmed by the relay. Check the response before retrying.");
   }
 
   http.end();
@@ -66,8 +68,9 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   Serial.println();
-  Serial.println("NEAR Tap | ESP32 testnet payment trigger");
-  Serial.println("Press onboard BOOT once to request a fixed 0.001 NEAR testnet transfer.");
+  Serial.println("NEAR Tap | Proof of Presence preview");
+  Serial.println("Press the onboard BOOT button once to record a presence event.");
+  Serial.println("Preview mode: no payment is sent and no blockchain transaction is made.");
   Serial.println("Do not hold BOOT during reset or startup.");
 
   connectWiFi();
@@ -82,8 +85,7 @@ void loop() {
     lastEdgeMs = millis();
 
     if (previousButtonState == HIGH && currentButtonState == LOW) {
-      Serial.println("Physical button press detected.");
-      triggerNearTransfer();
+      recordPresence();
     }
 
     previousButtonState = currentButtonState;
