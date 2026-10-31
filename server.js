@@ -70,13 +70,12 @@ const server = http.createServer(async (req, res) => {
     if (!String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json")) return send(res, 415, { error: "Content-Type must be application/json." });
   }
 
-  if (req.method === "POST" && url.pathname === "/api/session") {
-    let body = "";
-    try { for await (const chunk of req) { body += chunk; if (Buffer.byteLength(body) > 1024) return send(res, 413, { error: "Request too large." }); } }
-    catch { return send(res, 400, { error: "Could not read request body." }); }
-    let data;
-    try { data = JSON.parse(body || "{}"); } catch { return send(res, 400, { error: "Invalid JSON." }); }
-    return equalSecret(data.secret || "", OPERATOR_SECRET) ? send(res, 200, { authenticated: true }) : send(res, 401, { error: "Invalid operator secret." });
+  // Device ingress has its own device token. Every other API route requires
+  // the operator secret on every request; /api/session is intentionally absent.
+  if (url.pathname.startsWith("/api/") && url.pathname !== "/api/presence") {
+    if (!equalSecret(req.headers["x-operator-secret"] || "", OPERATOR_SECRET)) {
+      return send(res, 401, { error: "Operator authentication required." });
+    }
   }
 
   if (req.method === "GET" && url.pathname === "/api/dashboard") {
@@ -113,7 +112,6 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "POST" && url.pathname === "/api/publish") {
-    if (!equalSecret(req.headers["x-operator-secret"] || "", OPERATOR_SECRET)) return send(res, 401, { error: "Operator authentication required." });
     if (!nearAccount) return send(res, 503, { error: "NEAR relay is not initialised." });
     if (requestInFlight) return send(res, 429, { error: "A transaction is already being submitted." });
     let raw = "";
