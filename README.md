@@ -6,40 +6,6 @@ At the check-in point, an ESP32 sends a device-authenticated event to a Node.js 
 
 > **Prototype status:** NEAR Tap is a testnet demonstration, not a production attendance or identity-verification system.
 
-## Screenshots
-
-The screenshots below document the physical device, check-in workflow, dashboard, and NEAR testnet verification.
-
-> Add the corresponding image files to `assets/screenshots/` using the filenames shown below. The image links will display once those files have been uploaded.
-
-### Hardware
-
-![NEAR Tap ESP32 device](assets/screenshots/esp32-device.jpg)
-
-### Dashboard
-
-![NEAR Tap dashboard](assets/screenshots/dashboard.jpg)
-
-### Physical check-in received
-
-![Pending physical check-in](assets/screenshots/pending-checkin.jpg)
-
-### Participant name entry
-
-![Participant name entry](assets/screenshots/participant-entry.jpg)
-
-### Successful on-chain publication
-
-![Successful on-chain attendance publication](assets/screenshots/onchain-success.jpg)
-
-### NEAR Explorer transaction
-
-![NEAR testnet transaction](assets/screenshots/near-explorer.jpg)
-
-### Record verification
-
-![NEAR Tap record verification](assets/screenshots/verification.jpg)
-
 ## How attendance works
 
 1. A participant presses the BOOT button on the ESP32 at the check-in point.
