@@ -29,6 +29,14 @@ Participant names are stored in NEAR contract storage and can be retrieved with 
 - Transaction hash and NEAR testnet explorer link after successful publication
 - Responsive dashboard for monitoring and verification
 
+## Business model and sustainability
+
+NEAR Tap has a potential usage-based business model for event organizers, schools, conferences, and workplaces. A future hosted version could charge an organizer a small service fee per successfully published attendance record, or offer event-based packages with a fixed fee and an included attendance allowance.
+
+The fee would be a platform/service charge for operating the check-in workflow, dashboard, and record-verification service. It should be disclosed to the organizer before an event begins. The organizer could decide whether to absorb the cost or include it in event registration pricing. NEAR network transaction costs are separate from the platform fee.
+
+**This is a proposed monetization model, not a feature implemented in the current prototype.** The present testnet demo does not charge users or collect platform fees. Pricing, payment collection, refunds, and organizer billing would need to be designed and tested before launch.
+
 ## Architecture
 
 ```text
