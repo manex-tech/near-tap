@@ -113,6 +113,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "POST" && url.pathname === "/api/publish") {
+    if (!equalSecret(req.headers["x-operator-secret"] || "", OPERATOR_SECRET)) return send(res, 401, { error: "Operator authentication required." });
     if (!nearAccount) return send(res, 503, { error: "NEAR relay is not initialised." });
     if (requestInFlight) return send(res, 429, { error: "A transaction is already being submitted." });
     let raw = "";
@@ -130,6 +131,7 @@ const server = http.createServer(async (req, res) => {
     if (!eventId || eventId.length > 128) return send(res, 400, { error: "Invalid event ID." });
     if (!participantName || Buffer.byteLength(participantName, "utf8") > 80) return send(res, 400, { error: "Enter a name of 1 to 80 characters." });
     if (!pendingEvents.has(eventId)) return send(res, 404, { error: "This check-in is no longer pending. Refresh the dashboard." });
+    const pending = pendingEvents.get(eventId);
     requestInFlight = true;
     try {
       const result = await nearAccount.functionCall({
@@ -137,7 +139,6 @@ const server = http.createServer(async (req, res) => {
         args: { event_id: eventId, participant_name: participantName },
         gas: GAS, attachedDeposit: BigInt(0)
       });
-      const pending = pendingEvents.get(eventId);
       pendingEvents.delete(eventId);
       eventCount += 1;
       const record = {
@@ -152,8 +153,19 @@ const server = http.createServer(async (req, res) => {
       console.log(JSON.stringify(record));
       return send(res, 200, record);
     } catch (error) {
-      console.error("NEAR publish failed:", error?.message || error);
-      return send(res, 502, { error: "NEAR did not confirm this attendance record. It remains pending; you can retry." });
+      console.error("NEAR publish response failed; reconciling on-chain state:", error?.message || error);
+      try {
+        const existing = await nearAccount.viewFunction({ contractId: CONTRACT_ID, methodName: "get_presence", args: { event_id: eventId } });
+        if (existing) {
+          const nameOnChain = await nearAccount.viewFunction({ contractId: CONTRACT_ID, methodName: "get_presence_name", args: { event_id: eventId } });
+          pendingEvents.delete(eventId);
+          const record = { status: "recorded", network: NETWORK_ID, onchain: true, event: "presence", deviceId: pending?.deviceId || "near-tap-esp32", eventId, participantName: nameOnChain || participantName, eventNumber: null, transactionHash: null, explorerUrl: null, recordedAt: new Date().toISOString(), detectedAt: pending?.detectedAt || null, reconciled: true };
+          recentEvents.unshift(record);
+          if (recentEvents.length > 8) recentEvents.pop();
+          return send(res, 200, record);
+        }
+      } catch (reconcileError) { console.error("Reconciliation query failed:", reconcileError?.message || reconcileError); }
+      return send(res, 502, { error: "NEAR confirmation is uncertain. Check the event on NEAR Explorer before retrying." });
     } finally { requestInFlight = false; }
   }
 
