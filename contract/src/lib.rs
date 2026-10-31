@@ -21,7 +21,7 @@ impl Contract {
     #[init]
     pub fn new() -> Self {
         Self {
-            records: LookupMap::new(b"presence"),
+            records: LookupMap::new(&b"presence"[..]),
             total_records: 0,
         }
     }
