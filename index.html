@@ -6,35 +6,81 @@
 <meta name="theme-color" content="#080d18">
 <title>NEAR Tap — Proof of Presence</title>
 <style>
-:root{color-scheme:dark;--bg:#080d18;--panel:#101827;--panel2:#0c1422;--line:#202d40;--muted:#91a0b5;--text:#edf4ff;--teal:#55e0c0;--blue:#8db8ff;--red:#ff8585}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% -10%,#16334a 0,transparent 38%),var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
-.shell{max-width:1120px;margin:auto;padding:34px 24px 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:54px}.brand{display:flex;align-items:center;gap:12px;font-weight:750;letter-spacing:-.04em;font-size:21px}.mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#6af0ce,#3c9dce);display:grid;place-items:center;color:#07121b;font-weight:900}.network{border:1px solid #28564f;background:#102b2a;color:var(--teal);border-radius:999px;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:.12em}
-.hero{max-width:720px;margin-bottom:32px}.eyebrow{color:var(--teal);font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}.hero h1{font-size:clamp(36px,6vw,58px);line-height:1.04;letter-spacing:-.055em;margin:12px 0}.hero p{color:var(--muted);font-size:16px;max-width:610px;margin:0}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:30px 0}.card{background:linear-gradient(180deg,#121d2d,#0e1725);border:1px solid var(--line);border-radius:18px;padding:20px;min-width:0}.metric-label{color:var(--muted);font-size:12px}.metric{font-size:34px;font-weight:750;letter-spacing:-.05em;margin-top:8px}.metric small{font-size:13px;color:var(--muted);font-weight:500;letter-spacing:0}.statusline{display:flex;align-items:center;gap:8px;margin-top:12px;color:var(--teal);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 12px #55e0c088}
-.columns{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}.section-head h2{font-size:16px;margin:0;letter-spacing:-.02em}.subtle{font-size:12px;color:var(--muted)}.activity{display:flex;flex-direction:column;gap:10px}.event{padding:14px;border:1px solid var(--line);border-radius:13px;background:#0b1421}.eventtop{display:flex;justify-content:space-between;gap:10px}.pill{font-size:10px;letter-spacing:.08em;font-weight:800;color:var(--teal);background:#102d2a;padding:4px 8px;border-radius:99px}.mono{font:12px ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;color:#c2d2e7}.eventid{margin:9px 0 5px}.link{color:var(--blue);text-decoration:none;font-size:12px}.link:hover{text-decoration:underline}
-form{display:flex;gap:8px;margin-top:14px}input{width:100%;min-width:0;background:#080f1b;border:1px solid #2a3a50;border-radius:10px;padding:12px;color:var(--text);font:13px ui-monospace,monospace;outline:none}input:focus{border-color:var(--teal)}button{border:0;border-radius:10px;background:var(--teal);color:#061511;padding:0 16px;font-weight:800;cursor:pointer;white-space:nowrap}button:disabled{opacity:.55;cursor:wait}.result{margin-top:14px;padding:14px;border-radius:12px;border:1px solid var(--line);background:#0b1421;display:none}.result.show{display:block}.result.error{border-color:#704040}.recordrow{display:grid;grid-template-columns:100px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #1b293a}.recordrow:last-child{border:0}.recordrow span:first-child{font-size:11px;color:var(--muted)}.footer{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:11px}.empty{color:var(--muted);font-size:13px;padding:18px 0}
-@media(max-width:760px){.shell{padding:22px 16px 40px}.top{margin-bottom:38px}.grid{grid-template-columns:1fr 1fr}.columns{grid-template-columns:1fr}.grid .card:last-child{grid-column:1/-1}.footer{flex-direction:column}}
-@media(max-width:420px){.grid{grid-template-columns:1fr}.grid .card:last-child{grid-column:auto}form{flex-direction:column}button{padding:12px}}
+:root{color-scheme:dark;--bg:#090b0a;--surface:#111412;--surface2:#151916;--line:#292e2a;--muted:#929a93;--text:#f3f5f2;--accent:#b8f36b;--accent-ink:#11170a;--danger:#e58c82}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:-.01em}
+button,input{font:inherit}
+.shell{max-width:1160px;margin:auto;padding:28px 28px 56px}
+.top{height:54px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:64px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:720;letter-spacing:-.045em;font-size:19px}
+.mark{width:30px;height:30px;border:1px solid #3b4637;border-radius:8px;display:grid;place-items:center;color:var(--accent);font-size:15px;font-weight:800}
+.network{display:flex;align-items:center;gap:9px;color:#c6ccc5;font-size:10px;font-weight:750;letter-spacing:.14em}
+.network:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.hero{max-width:760px;margin-bottom:38px}
+.eyebrow{color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.hero h1{font-size:clamp(38px,6vw,62px);line-height:1.02;letter-spacing:-.065em;font-weight:650;margin:14px 0 16px}
+.hero p{color:var(--muted);font-size:15px;max-width:570px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+.metric-label{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.12em}
+.metric{font-size:32px;font-weight:650;letter-spacing:-.055em;margin-top:12px;font-variant-numeric:tabular-nums}
+.statusline{display:flex;align-items:center;gap:8px;margin-top:12px;color:#c1c8c0;font-size:11px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
+.dot.pulse{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 #b8f36b00}50%{opacity:.65;box-shadow:0 0 0 5px #b8f36b12}}
+.columns{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px}
+.section-head h2{font-size:14px;margin:0;letter-spacing:-.02em;font-weight:650}
+.subtle{font-size:11px;color:var(--muted)}
+.activity{display:flex;flex-direction:column;gap:8px}
+.event{padding:14px;border:1px solid var(--line);border-radius:9px;background:#0d100e;animation:arrive .32s ease both}
+@keyframes arrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.eventtop{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.pill{font-size:9px;letter-spacing:.1em;font-weight:800;color:var(--accent);border:1px solid #39472d;padding:3px 7px;border-radius:4px}
+.mono{font:11px ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;color:#d0d5ce}
+.eventid{margin:10px 0 6px}
+.link{color:var(--accent);text-decoration:none;font-size:11px}
+.link:hover{text-decoration:underline}
+form{display:flex;gap:8px;margin-top:16px}
+input{width:100%;min-width:0;background:#0b0e0c;border:1px solid #343b34;border-radius:8px;padding:12px;color:var(--text);font:12px ui-monospace,monospace;outline:none;transition:border-color .18s}
+input:focus{border-color:var(--accent)}
+button{border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:var(--accent-ink);padding:0 17px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:background .18s,transform .18s}
+button:hover{background:#c9fa83;transform:translateY(-1px)}
+button:active{transform:translateY(0)}
+button:disabled{opacity:.6;cursor:wait;transform:none}
+.result{margin-top:14px;padding:14px;border-radius:9px;border:1px solid var(--line);background:#0d100e;display:none}
+.result.show{display:block;animation:arrive .24s ease both}
+.result.error{border-color:#70443f}
+.result .statusline{color:var(--accent);margin:0 0 8px}
+.recordrow{display:grid;grid-template-columns:90px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.recordrow:last-of-type{border:0}
+.recordrow span:first-child{font-size:10px;color:var(--muted)}
+.footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:10px}
+.empty{color:var(--muted);font-size:12px;padding:18px 0}
+@media(max-width:760px){.shell{padding:20px 16px 40px}.top{margin-bottom:42px}.grid{grid-template-columns:1fr 1fr}.columns{grid-template-columns:1fr}.grid .card:last-child{grid-column:1/-1}.footer{flex-direction:column}}
+@media(max-width:440px){.grid{grid-template-columns:1fr}.grid .card:last-child{grid-column:auto}form{flex-direction:column}button{padding:12px}.hero h1{font-size:42px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body><main class="shell">
 <header class="top"><div class="brand"><div class="mark">N</div>NEAR Tap</div><div class="network">NEAR TESTNET</div></header>
-<section class="hero"><div class="eyebrow">Hardware-powered proof of presence</div><h1>Presence, made<br>verifiable.</h1><p>A physical check-in becomes a permanent, independently verifiable record on the NEAR blockchain.</p></section>
+<section class="hero"><div class="eyebrow">Proof of presence · Hardware verified</div><h1>Every check-in.<br>On the record.</h1><p>NEAR Tap connects a physical interaction to a verifiable on-chain record. Simple to use. Publicly auditable.</p></section>
 <section class="grid">
-<div class="card"><div class="metric-label">ON-CHAIN RECORDS</div><div class="metric" id="total">—</div><div class="statusline"><span class="dot"></span><span>Read from smart contract</span></div></div>
+<div class="card"><div class="metric-label">ON-CHAIN RECORDS</div><div class="metric" id="total">—</div><div class="statusline"><span class="dot pulse"></span><span>Live contract query</span></div></div>
 <div class="card"><div class="metric-label">RELAY STATUS</div><div class="metric" id="relay">—</div><div class="statusline" id="relayNote">Checking connection…</div></div>
-<div class="card"><div class="metric-label">NETWORK</div><div class="metric">Testnet</div><div class="statusline"><span class="dot"></span><span id="contract">manextech.testnet</span></div></div>
+<div class="card"><div class="metric-label">NETWORK</div><div class="metric">Testnet</div><div class="statusline"><span class="dot pulse"></span><span id="contract">manextech.testnet</span></div></div>
 </section>
 <section class="columns">
 <div class="card"><div class="section-head"><h2>Recent check-ins</h2><span class="subtle">Current relay session</span></div><div class="activity" id="activity"><div class="empty">Loading activity…</div></div></div>
-<div class="card"><div class="section-head"><h2>Verify a check-in</h2><span class="subtle">Direct contract lookup</span></div><p class="subtle">Enter an event ID to retrieve its record from the NEAR smart contract.</p><form id="verifyForm"><input id="eventId" placeholder="Paste event ID" autocomplete="off" required><button id="verifyBtn">Verify</button></form><div class="result" id="verifyResult" aria-live="polite"></div></div>
+<div class="card"><div class="section-head"><h2>Verify record</h2><span class="subtle">Direct contract lookup</span></div><p class="subtle">Enter an event ID to retrieve its record from the NEAR smart contract.</p><form id="verifyForm"><input id="eventId" placeholder="Paste event ID" autocomplete="off" required><button id="verifyBtn">Verify</button></form><div class="result" id="verifyResult" aria-live="polite"></div></div>
 </section>
-<footer class="footer"><span>NEAR Tap · Proof of Presence</span><span>Prototype demonstration · NEAR testnet</span></footer>
+<footer class="footer"><span>NEAR Tap · Proof of Presence</span><span>Built on NEAR · Testnet demonstration</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-async function refresh(){try{const r=await fetch("/api/dashboard");if(!r.ok)throw Error("Relay unavailable");const d=await r.json();$("total").textContent=d.totalRecords??"—";$("relay").textContent=d.relayReady?"Online":"Offline";$("relayNote").innerHTML=d.relayReady?'<span class="dot"></span>Connected to NEAR':"Relay unavailable";$("contract").textContent=d.contractId||"NEAR testnet";$("activity").innerHTML=d.recent.length?d.recent.map(e=>'<article class="event"><div class="eventtop"><strong>Check-in #'+esc(e.eventNumber)+'</strong><span class="pill">CONFIRMED</span></div><div class="mono eventid">'+esc(e.eventId)+'</div><a class="link" target="_blank" rel="noopener" href="'+esc(e.explorerUrl)+'">View transaction ↗</a></article>').join(""):'<div class="empty">No check-ins in this relay session yet. Press the ESP32 button to create one.</div>';}catch(e){$("relay").textContent="Offline";$("relayNote").textContent="Could not reach relay";}}
+async function refresh(){try{const r=await fetch("/api/dashboard");if(!r.ok)throw Error("Relay unavailable");const d=await r.json();$("total").textContent=d.totalRecords??"—";$("relay").textContent=d.relayReady?"Online":"Offline";$("relayNote").innerHTML=d.relayReady?'<span class="dot pulse"></span>Connected to NEAR':"Relay unavailable";$("contract").textContent=d.contractId||"NEAR testnet";$("activity").innerHTML=d.recent.length?d.recent.map(e=>'<article class="event"><div class="eventtop"><strong>Check-in #'+esc(e.eventNumber)+'</strong><span class="pill">CONFIRMED</span></div><div class="mono eventid">'+esc(e.eventId)+'</div><a class="link" target="_blank" rel="noopener" href="'+esc(e.explorerUrl)+'">View transaction ↗</a></article>').join(""):'<div class="empty">No check-ins in this relay session yet. Press the ESP32 button to create one.</div>';}catch(e){$("relay").textContent="Offline";$("relayNote").textContent="Could not reach relay";}}
 $("verifyForm").addEventListener("submit",async e=>{e.preventDefault();const id=$("eventId").value.trim();if(!id)return;const btn=$("verifyBtn"),box=$("verifyResult");btn.disabled=true;btn.textContent="Checking…";box.className="result show";box.textContent="Querying NEAR testnet…";try{const r=await fetch("/api/verify?eventId="+encodeURIComponent(id));const d=await r.json();if(!r.ok||!d.found)throw Error(d.error||"No record found for this event ID.");const x=d.record;box.className="result show";box.innerHTML='<div class="statusline"><span class="dot"></span><strong>Record found on NEAR</strong></div><div class="recordrow"><span>Event ID</span><span class="mono">'+esc(x.event_id)+'</span></div><div class="recordrow"><span>Account</span><span class="mono">'+esc(x.account_id)+'</span></div><div class="recordrow"><span>Block time</span><span>'+esc(new Date(Number(x.timestamp_ns)/1e6).toLocaleString())+'</span></div><p><span class="subtle">Verified by reading the contract state.</span></p>';}catch(err){box.className="result show error";box.textContent=err.message;}finally{btn.disabled=false;btn.textContent="Verify";}});
 refresh();setInterval(refresh,10000);
 </script></body></html>
