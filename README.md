@@ -66,9 +66,9 @@ The relay uses a NEAR function-call access key to submit contract calls. The con
 | Record and name lookup | Implemented in contract source and relay |
 | Dashboard transaction confirmation | Implemented in source |
 
-**Deployment note:** The currently deployed NEAR testnet contract may still be the earlier version without participant-name support. Deploy the updated contract WASM before using the new name-and-publish workflow. Deploy the updated WASM to the existing contract account without calling the initializer again. The existing contract state should be preserved; do not reinitialize the contract.
+**Testnet deployment verified:** The updated contract WASM is deployed to `manextech.testnet`. Read-only calls to `total_records()`, `get_presence(event_id)`, and `get_presence_name(event_id)` succeeded after the upgrade. The pre-upgrade record was preserved, and its name lookup correctly returned `null` because it predates participant-name storage.
 
-Older records remain readable through `get_presence(event_id)`. They will not have participant names, so `get_presence_name(event_id)` returns no name for those records.
+A fresh named attendance transaction was also submitted successfully from the dashboard. The dashboard displayed the participant name and transaction link. Older records remain readable through `get_presence(event_id)`; they do not have participant names, so `get_presence_name(event_id)` returns no name for those records.
 
 ## Requirements
 
