@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "ESP32 proof-of-presence prototype for NEAR",
+  "description": "NEAR Tap — turn physical check-ins into verifiable on-chain presence records.",
   "scripts": {
     "start": "node server.js",
     "check": "node --check server.js"
