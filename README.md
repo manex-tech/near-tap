@@ -29,6 +29,24 @@ Participant names are stored in NEAR contract storage and can be retrieved with 
 - Transaction hash and NEAR testnet explorer link after successful publication
 - Responsive dashboard for monitoring and verification
 
+## Screenshots
+
+The screenshots below show the prototype's physical device, operator workflow, and on-chain verification evidence.
+
+| ESP32 device | Dashboard |
+|---|---|
+| ![ESP32 device](assets/screenshots/esp32-device.jpg) | ![NEAR Tap dashboard](assets/screenshots/dashboard.jpg) |
+
+| Pending check-in | Participant entry |
+|---|---|
+| ![Pending check-in](assets/screenshots/pending-checkin.jpg) | ![Participant name entry](assets/screenshots/participant-entry.png) |
+
+| On-chain success | NEAR Explorer |
+|---|---|
+| ![On-chain success](assets/screenshots/onchain-success.jpg) | ![NEAR Explorer transaction](assets/screenshots/near-explorer.jpg) |
+
+Additional evidence: [record verification](assets/screenshots/verification.jpg) and [repository overview](assets/screenshots/repository.jpg).
+
 ## Business model and sustainability
 
 NEAR Tap has a potential usage-based business model for event organizers, schools, conferences, and workplaces. A future hosted version could charge an organizer a small service fee per successfully published attendance record, or offer event-based packages with a fixed fee and an included attendance allowance.
