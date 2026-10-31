@@ -14,6 +14,7 @@ const RPC_URL = process.env.NEAR_RPC_URL || "https://rpc.testnet.near.org";
 const COOLDOWN_MS = 30_000;
 const GAS = BigInt("100000000000000");
 const recentEvents = [];
+const pendingEvents = new Map();
 let lastAcceptedAt = 0;
 let eventCount = 0;
 let requestInFlight = false;
@@ -70,7 +71,8 @@ const server = http.createServer(async (req, res) => {
       });
       return send(res, 200, {
         relayReady: true, network: NETWORK_ID, contractId: CONTRACT_ID,
-        totalRecords: Number(totalRecords), recent: recentEvents
+        totalRecords: Number(totalRecords), recent: recentEvents,
+        pending: [...pendingEvents.values()]
       });
     } catch (error) {
       console.error("Dashboard query failed:", error?.message || error);
@@ -86,11 +88,57 @@ const server = http.createServer(async (req, res) => {
       const record = await nearAccount.viewFunction({
         contractId: CONTRACT_ID, methodName: "get_presence", args: { event_id: eventId }
       });
-      return send(res, 200, { found: Boolean(record), record: record || null });
+      const participantName = record ? await nearAccount.viewFunction({ contractId: CONTRACT_ID, methodName: "get_presence_name", args: { event_id: eventId } }) : null;
+      return send(res, 200, { found: Boolean(record), record: record || null, participantName: participantName || null });
     } catch (error) {
       console.error("Record verification failed:", error?.message || error);
       return send(res, 502, { error: "Could not verify this record on NEAR testnet." });
     }
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/publish") {
+    if (!nearAccount) return send(res, 503, { error: "NEAR relay is not initialised." });
+    if (requestInFlight) return send(res, 429, { error: "A transaction is already being submitted." });
+    let raw = "";
+    try {
+      for await (const chunk of req) {
+        raw += chunk;
+        if (raw.length > 2048) return send(res, 413, { error: "Request too large." });
+      }
+    } catch { return send(res, 400, { error: "Could not read request body." }); }
+    let data;
+    try { data = JSON.parse(raw || "{}"); }
+    catch { return send(res, 400, { error: "Invalid JSON." }); }
+    const eventId = String(data.eventId || "").trim();
+    const participantName = String(data.participantName || "").trim();
+    if (!eventId || eventId.length > 128) return send(res, 400, { error: "Invalid event ID." });
+    if (!participantName || participantName.length > 80) return send(res, 400, { error: "Enter a name of 1 to 80 characters." });
+    if (!pendingEvents.has(eventId)) return send(res, 404, { error: "This check-in is no longer pending. Refresh the dashboard." });
+    requestInFlight = true;
+    try {
+      const result = await nearAccount.functionCall({
+        contractId: CONTRACT_ID, methodName: "record_presence",
+        args: { event_id: eventId, participant_name: participantName },
+        gas: GAS, attachedDeposit: BigInt(0)
+      });
+      const pending = pendingEvents.get(eventId);
+      pendingEvents.delete(eventId);
+      eventCount += 1;
+      const record = {
+        status: "recorded", network: NETWORK_ID, onchain: true,
+        event: "presence", deviceId: "near-tap-esp32", eventId, participantName,
+        eventNumber: eventCount, transactionHash: result.transaction.hash,
+        explorerUrl: `https://explorer.testnet.near.org/transactions/${result.transaction.hash}`,
+        recordedAt: new Date().toISOString(), detectedAt: pending.detectedAt
+      };
+      recentEvents.unshift(record);
+      if (recentEvents.length > 8) recentEvents.pop();
+      console.log(JSON.stringify(record));
+      return send(res, 200, record);
+    } catch (error) {
+      console.error("NEAR publish failed:", error?.message || error);
+      return send(res, 502, { error: "NEAR did not confirm this attendance record. It remains pending; you can retry." });
+    } finally { requestInFlight = false; }
   }
 
   if (req.method !== "POST" || url.pathname !== "/api/presence") {
@@ -119,44 +167,10 @@ const server = http.createServer(async (req, res) => {
   }
   const now = Date.now();
   if (now - lastAcceptedAt < COOLDOWN_MS) return send(res, 429, { error: "Cooldown active. Wait before checking in again." });
-
-  requestInFlight = true;
+  if (pendingEvents.size >= 10) return send(res, 429, { error: "Pending attendance queue is full. Publish or clear a pending check-in first." });
+  lastAcceptedAt = now;
   const eventId = randomUUID();
-  try {
-    const result = await nearAccount.functionCall({
-      contractId: CONTRACT_ID, methodName: "record_presence",
-      args: { event_id: eventId }, gas: GAS, attachedDeposit: BigInt(0)
-    });
-    lastAcceptedAt = Date.now();
-    eventCount += 1;
-    const record = {
-      status: "recorded", network: NETWORK_ID, onchain: true,
-      event: "presence", deviceId: "near-tap-esp32", eventId,
-      eventNumber: eventCount, transactionHash: result.transaction.hash,
-      explorerUrl: `https://explorer.testnet.near.org/transactions/${result.transaction.hash}`,
-      recordedAt: new Date(lastAcceptedAt).toISOString()
-    };
-    recentEvents.unshift(record);
-    if (recentEvents.length > 8) recentEvents.pop();
-    console.log(JSON.stringify(record));
-    return send(res, 200, record);
-  } catch (error) {
-    console.error("NEAR transaction failed:", error?.message || error);
-    return send(res, 502, {
-      error: "The presence event could not be confirmed on NEAR testnet. No successful check-in was reported."
-    });
-  } finally {
-    requestInFlight = false;
-  }
-});
-
-initialiseNear().then(() => {
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`NEAR Tap dashboard and relay listening on port ${PORT}`);
-    console.log(`Submitting record_presence transactions to ${CONTRACT_ID} on ${NETWORK_ID}.`);
-    console.log(`Dashboard: http://localhost:${PORT}`);
-  });
-}).catch(error => {
-  console.error("NEAR Tap startup failed:", error.message);
-  process.exitCode = 1;
-});
+  const pending = { eventId, detectedAt: new Date(now).toISOString(), status: "pending" };
+  pendingEvents.set(eventId, pending);
+  console.log("Physical check-in awaiting participant name:", eventId);
+  return send(res, 202, { status: "pending", onchain: false, ...pending, message: "Check-in received. Add the participant name on the dashboard before publishing to NEAR." });
