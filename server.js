@@ -174,3 +174,16 @@ const server = http.createServer(async (req, res) => {
   pendingEvents.set(eventId, pending);
   console.log("Physical check-in awaiting participant name:", eventId);
   return send(res, 202, { status: "pending", onchain: false, ...pending, message: "Check-in received. Add the participant name on the dashboard before publishing to NEAR." });
+
+});
+
+initialiseNear()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`NEAR Tap relay listening on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("NEAR relay initialisation failed:", error?.message || error);
+    process.exitCode = 1;
+  });
