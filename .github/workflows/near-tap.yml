@@ -12,9 +12,6 @@ on:
 jobs:
   node-check:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,5 +31,15 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      - name: Check NEAR contract
+      - name: Run contract unit tests
+        run: cargo test
+      - name: Check WebAssembly target
         run: cargo check --target wasm32-unknown-unknown
+      - name: Build release WebAssembly contract
+        run: cargo build --target wasm32-unknown-unknown --release
+      - name: Upload contract Wasm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: near-tap-contract-wasm
+          path: contract/target/wasm32-unknown-unknown/release/near_tap_contract.wasm
+          if-no-files-found: error
