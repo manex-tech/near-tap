@@ -1,94 +1,90 @@
 # NEAR Tap: Proof of Presence
 
-NEAR Tap is a hardware-powered proof-of-presence prototype. An ESP32 creates a check-in event, a Node.js relay validates the device request, and a NEAR smart contract is intended to anchor the event to NEAR testnet.
+NEAR Tap is a hardware-powered event check-in prototype. An ESP32 sends a device-authenticated check-in to a Node.js relay. The relay submits a transaction to a NEAR smart contract, which stores a unique event ID, the signing account, and the NEAR block timestamp.
 
-## Current implementation status
+## Current implementation
 
 - ESP32 BOOT-button check-in: implemented
-- Authenticated Node.js preview relay: implemented
-- NEAR smart contract source: added, not yet compiled or deployed
-- Relay-to-contract integration: not implemented yet
-- Testnet transaction verification: pending
+- Authenticated Node.js relay: implemented
+- NEAR smart contract: deployed and initialised on NEAR testnet
+- Relay-to-contract transaction submission: implemented; end-to-end hardware verification pending
+- Public testnet record lookup: available through the contract's `get_presence` view method
 
-**Important:** The current relay is preview-only. It stores events in memory and does not write to NEAR. Do not describe a check-in as on-chain until a testnet transaction has been confirmed.
+A check-in is only reported as successful after the relay receives a successful NEAR transaction result. The response includes the transaction hash and testnet explorer URL.
 
 ## Repository layout
 
-- `server.js`: authenticated local preview relay
+- `server.js`: authenticated relay and NEAR transaction submission
+- `package.json`: Node.js dependencies and scripts
 - `firmware/`: ESP32 firmware and example configuration
 - `contract/Cargo.toml`: Rust contract package
 - `contract/src/lib.rs`: NEAR smart contract source
-- `.github/workflows/near-tap.yml`: JavaScript syntax check
+- `.github/workflows/near-tap.yml`: automated Node.js and contract checks
 
-## Hardware
+## Requirements
 
+- Node.js 22 or newer
 - ESP32-WROOM-32 development board
-- USB data cable
 - Wi-Fi network
-- Computer running Node.js to host the relay
+- NEAR testnet account with a function-call access key restricted to the contract's `record_presence` method
 
-The onboard BOOT button is the current check-in trigger. No additional sensors are required for the prototype.
+## Configure the relay
 
-## Run the preview relay
+From the repository root, install dependencies:
 
-Install Node.js, then from the repository root:
-
-```bash
+```powershell
 npm install
 ```
 
-Set a strong device token before starting the relay.
+Create a local `.env` file in the repository root. Do not commit this file.
 
-Windows Command Prompt:
-
-```cmd
-set "TAP_DEVICE_TOKEN=YOUR_RANDOM_DEVICE_TOKEN"
-npm start
+```env
+PORT=8787
+TAP_DEVICE_TOKEN=replace_with_your_device_token
+NEAR_NETWORK=testnet
+NEAR_ACCOUNT_ID=manextech.testnet
+NEAR_CONTRACT_ID=manextech.testnet
+NEAR_PRIVATE_KEY=replace_with_your_restricted_function_call_private_key
+NEAR_RPC_URL=https://rpc.testnet.near.org
 ```
 
-PowerShell:
+Use a function-call access key restricted to the deployed contract account and the `record_presence` method. Do not use a full-access key for the relay. Keep the private key, device token, Wi-Fi credentials, and `.env` file out of GitHub.
+
+Start the relay:
 
 ```powershell
-$env:TAP_DEVICE_TOKEN="YOUR_RANDOM_DEVICE_TOKEN"
 npm start
 ```
 
-The relay listens on port 8787 by default. Check its health at `http://localhost:8787/health`.
+The relay listens on port 8787 by default. Check `http://localhost:8787/health`. A healthy response should report `onchain: true` and `network: "testnet"`.
 
 ## Configure the ESP32
 
-Copy `firmware/secrets.example.h` to `firmware/secrets.h` locally. Set your Wi-Fi credentials, relay URL, and the same device token used by the relay.
+Copy `firmware/secrets.example.h` to `firmware/secrets.h` locally. Set your Wi-Fi credentials, relay URL, and the same device token configured in `.env`.
 
-Set `TAP_RELAY_URL` to your computer's LAN address, for example:
+Set the relay URL to your computer's LAN address, for example:
 
 ```text
 http://192.168.1.10:8787/api/presence
 ```
 
-Do not use `localhost` as the ESP32 destination. Do not commit `secrets.h`, Wi-Fi passwords, or device tokens.
+Do not use `localhost` as the ESP32 destination. The computer and ESP32 must be able to reach each other over the local network. Do not commit `secrets.h`.
 
-## Build the NEAR contract
+## Contract methods
 
-The contract source is in `contract/`. With Rust and Cargo installed, enter that directory and run:
+- `record_presence(event_id)`: records a unique event ID, the predecessor account ID, and the block timestamp.
+- `get_presence(event_id)`: returns a stored record.
+- `total_records()`: returns the total number of records.
 
-```bash
-cargo check
-```
+## Security and trust limitations
 
-This checks the Rust contract source. It does not produce a deployable NEAR WASM artifact or deploy the contract. We will add the NEAR build and test workflow after the source compiles successfully.
+- The relay's device token authenticates the ESP32 request to the relay. It is not hardware attestation.
+- A button press proves interaction with the device, not a person's identity or physical location.
+- The contract records the NEAR account that signs the transaction. It does not independently verify who operated the ESP32.
+- The contract method is publicly callable. The restricted relay key limits the relay credential, but does not prevent other accounts from calling the public contract method.
+- The current cooldown is in relay memory and resets when the relay restarts.
+- Never commit secrets or private keys. Rotate any credential that has been exposed.
 
-## Security and verification notes
+## Verification
 
-- A button press demonstrates interaction with the device; by itself it does not prove a person's identity or physical location.
-- The contract records the NEAR account that signs the transaction and the blockchain timestamp.
-- The relay's shared device token authenticates a device to the preview relay; it is not a substitute for cryptographic hardware attestation.
-- Never commit secrets or private keys.
-- Do not claim an event is on-chain until its transaction is confirmed on NEAR testnet.
-
-## Development milestones
-
-1. Confirm ESP32-to-relay check-ins.
-2. Compile and test the NEAR contract.
-3. Deploy the contract to NEAR testnet.
-4. Connect the relay or participant client to the contract securely.
-5. Verify records through a public testnet explorer and a simple dashboard.
+After a successful check-in, copy the returned transaction hash and open its testnet explorer URL. The relay's response must contain `onchain: true` and a transaction hash before treating the check-in as anchored on NEAR.
