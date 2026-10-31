@@ -78,6 +78,55 @@ A fresh named attendance transaction was also submitted successfully from the da
 - A NEAR testnet account
 - A NEAR function-call access key scoped to the contract account and the `record_presence` method
 
+## Try the prototype
+
+This is a hardware-in-the-loop demo. To reproduce the complete flow, you need an ESP32 board, a computer on the same Wi-Fi network, and a configured NEAR testnet function-call key. The contract is already deployed at `manextech.testnet`.
+
+### 1. Start the relay
+
+Clone the repository, install dependencies, and enter the project directory:
+
+```powershell
+git clone https://github.com/manex-tech/near-tap.git
+cd near-tap
+npm install
+```
+
+Create the local `.env` file using the example in [Run the relay](#run-the-relay), then run:
+
+```powershell
+npm run check
+npm start
+```
+
+**Expected result:** The terminal reports that the NEAR Tap relay is listening on port `8787`. Open `http://localhost:8787` in your browser to see the dashboard.
+
+### 2. Connect the ESP32
+
+Copy `firmware/secrets.example.h` to `firmware/secrets.h`. Add your Wi-Fi credentials, the same device token used in `.env`, and the computer's LAN IP address in `TAP_RELAY_URL`. Upload the firmware in PlatformIO using the `esp32dev` environment.
+
+**Expected result:** The ESP32 connects to Wi-Fi and is ready to send a check-in when its BOOT button is pressed.
+
+### 3. Create a pending check-in
+
+With the relay running and the ESP32 connected to the same network, press the ESP32 BOOT button once.
+
+**Expected result:** A new pending check-in appears on the dashboard. At this point, no blockchain transaction has been submitted.
+
+### 4. Publish the attendance record
+
+In the dashboard, enter a participant name for the pending check-in and select **Publish to NEAR**.
+
+**Expected result:** The dashboard reports a successful on-chain publication and displays a transaction link. The participant name is an operator-entered label, not an identity check.
+
+### 5. Verify it on NEAR
+
+Open the transaction link from the dashboard. You can also use the dashboard's **Verify record** field with the event ID.
+
+**Expected result:** NEAR Explorer shows the successful testnet transaction, and the dashboard retrieves the record and participant name from the deployed contract.
+
+If a step fails, check that the relay is still running, the ESP32 and computer are on the same Wi-Fi network, the device token matches in both configurations, and the NEAR testnet account has sufficient balance and function-call-key allowance.
+
 ## Run the relay
 
 Clone the repository and install dependencies from the project root:
