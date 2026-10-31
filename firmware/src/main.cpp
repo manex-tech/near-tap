@@ -53,8 +53,8 @@ void recordPresence() {
 
   Serial.printf("Presence relay HTTP status: %d\n", status);
   Serial.println(response);
-  if (status == 200) {
-    Serial.println("Presence recorded by the preview relay. This is not yet an on-chain NEAR record.");
+  if (status == 202) {
+    Serial.println("Check-in received. Add the participant name on the dashboard, then publish to NEAR.");
   } else {
     Serial.println("Presence was not confirmed by the relay. Check the response before retrying.");
   }
