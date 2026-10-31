@@ -1,0 +1,12 @@
+# Local secrets
+firmware/secrets.h
+.env
+.env.*
+!.env.example
+
+# Rust build output
+/contract/target/
+
+# Node dependencies and logs
+/node_modules/
+npm-debug.log*
