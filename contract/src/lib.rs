@@ -2,7 +2,7 @@ use near_sdk::store::LookupMap;
 use near_sdk::{env, near, AccountId, PanicOnDefault};
 
 #[near(serializers = [json, borsh])]
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PresenceRecord {
     pub event_id: String,
     pub account_id: AccountId,
