@@ -218,6 +218,19 @@ After a successful publication:
 
 A record should be described as published only after the transaction has succeeded on NEAR. A pending event is not yet an on-chain attendance record.
 
+## Repository review guides
+
+This repository includes concise guides for human and AI-assisted review:
+
+- [AGENTS.md](AGENTS.md): repository map, implementation workflow, review guidance, and checks for coding agents.
+- [CLAUDE.md](CLAUDE.md): Claude Code entry point and project-specific review constraints.
+- [Architecture](docs/ARCHITECTURE.md): component responsibilities, data flow, and trust boundaries.
+- [Testing and verification](docs/TESTING.md): automated checks, manual acceptance tests, and demo evidence.
+- [Security policy](SECURITY.md): implemented safeguards, known limitations, and production recommendations.
+- [Roadmap](ROADMAP.md): implemented capabilities versus proposed improvements.
+
+These files are intended to make the project easier to inspect and reproduce. They do not imply that planned features are implemented or that the prototype has undergone an independent security audit.
+
 ## Project
 
 - Repository: [manex-tech/near-tap](https://github.com/manex-tech/near-tap)
