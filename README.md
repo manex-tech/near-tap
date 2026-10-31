@@ -1,44 +1,46 @@
 # NEAR Tap: Proof of Presence
 
-NEAR Tap is a hardware-powered event check-in prototype. An ESP32 sends a device-authenticated check-in to a Node.js relay. The relay submits a transaction to a NEAR smart contract, which stores a unique event ID, the signing account, and the NEAR block timestamp.
+NEAR Tap is a hardware-powered attendance prototype. An ESP32 sends a device-authenticated check-in to a Node.js relay. The operator adds the participant's name in the dashboard and explicitly publishes the attendance record to a NEAR smart contract.
+
+## Attendance workflow
+
+1. A participant presses the ESP32 BOOT button at the check-in point.
+2. The authenticated relay creates a pending event. No blockchain transaction is sent yet.
+3. An operator enters the participant's name in the dashboard.
+4. The operator selects **Publish to NEAR**.
+5. The relay submits the event ID and participant name to the smart contract.
+6. The dashboard confirms only after NEAR returns a successful transaction, with an explorer link.
+
+Participant names are stored on-chain in NEAR contract storage and can be retrieved using `get_presence_name(event_id)`. Names are public blockchain data. Do not use sensitive personal information or collect names without appropriate notice and consent.
 
 ## Current implementation
 
 - ESP32 BOOT-button check-in: implemented
-- Authenticated Node.js relay: implemented
-- NEAR smart contract: deployed and initialised on NEAR testnet
-- Relay-to-contract transaction submission: verified with a successful ESP32-triggered NEAR testnet transaction
-- Live dashboard: implemented at the relay root URL
-- On-chain event verification: implemented through the contract's `get_presence` view method
-- Public testnet record lookup: available through the contract's `get_presence` view method
+- Device-token authenticated Node.js relay: implemented
+- Pending attendance queue: implemented in relay memory
+- Operator name entry and publish action: implemented in dashboard
+- NEAR smart contract name storage and lookup: implemented in source
+- On-chain verification of event ID, participant name, signing account and block timestamp: implemented in relay
+- Light responsive dashboard: implemented
 
-A check-in is only reported as successful after the relay receives a successful NEAR transaction result. The response includes the transaction hash and testnet explorer URL.
-
-## Repository layout
-
-- `server.js`: authenticated relay and NEAR transaction submission
-- `package.json`: Node.js dependencies and scripts
-- `firmware/`: ESP32 firmware and example configuration
-- `contract/Cargo.toml`: Rust contract package
-- `contract/src/lib.rs`: NEAR smart contract source
-- `.github/workflows/near-tap.yml`: automated Node.js and contract checks
+The currently deployed testnet contract predates participant-name support. Deploy the updated WASM before using the new publish workflow. Existing on-chain records remain readable, but naturally have no participant name.
 
 ## Requirements
 
 - Node.js 22 or newer
 - ESP32-WROOM-32 development board
 - Wi-Fi network
-- NEAR testnet account with a function-call access key restricted to the contract's `record_presence` method
+- NEAR testnet account with a function-call access key restricted to `record_presence`
 
 ## Configure the relay
 
-From the repository root, install dependencies:
+Install dependencies from the repository root:
 
 ```powershell
 npm install
 ```
 
-Create a local `.env` file in the repository root. Do not commit this file.
+Create a local `.env` file. Do not commit it.
 
 ```env
 PORT=8787
@@ -50,7 +52,7 @@ NEAR_PRIVATE_KEY=replace_with_your_restricted_function_call_private_key
 NEAR_RPC_URL=https://rpc.testnet.near.org
 ```
 
-Use a function-call access key restricted to the deployed contract account and the `record_presence` method. Do not use a full-access key for the relay. Keep the private key, device token, Wi-Fi credentials, and `.env` file out of GitHub.
+The relay key must be restricted to the contract account and `record_presence` method. Keep private keys, device tokens and Wi-Fi credentials out of GitHub.
 
 Start the relay:
 
@@ -58,41 +60,29 @@ Start the relay:
 npm start
 ```
 
-The relay listens on port 8787 by default. Check `http://localhost:8787/health`. A healthy response should report `onchain: true` and `network: "testnet"`.
+Open `http://localhost:8787`.
 
 ## Configure the ESP32
 
-Copy `firmware/secrets.example.h` to `firmware/secrets.h` locally. Set your Wi-Fi credentials, relay URL, and the same device token configured in `.env`.
-
-Set the relay URL to your computer's LAN address, for example:
-
-```text
-http://192.168.1.10:8787/api/presence
-```
-
-Do not use `localhost` as the ESP32 destination. The computer and ESP32 must be able to reach each other over the local network. Do not commit `secrets.h`.
-
-## Dashboard and verification
-
-Start the relay with `npm start`, then open `http://localhost:8787` in a browser. The dashboard reads the contract's `total_records` value, shows recent check-ins observed during the current relay session, and verifies an event ID directly against `get_presence` on NEAR testnet.
-
-Recent activity is held in relay memory and resets when the process restarts. The contract currently supports lookup by event ID but does not expose a method to enumerate all records. The dashboard therefore does not claim to show a complete historical activity feed.
+Copy `firmware/secrets.example.h` to `firmware/secrets.h` locally. Set the Wi-Fi credentials, relay URL and same device token as the relay. Use the computer's LAN IP in the ESP32 URL, not `localhost`.
 
 ## Contract methods
 
-- `record_presence(event_id)`: records a unique event ID, the predecessor account ID, and the block timestamp.
-- `get_presence(event_id)`: returns a stored record.
-- `total_records()`: returns the total number of records.
+- `record_presence(event_id, participant_name)`: stores the unique event, participant name, transaction predecessor and block timestamp.
+- `get_presence(event_id)`: returns the event record.
+- `get_presence_name(event_id)`: returns the participant name, or `null` for older records.
+- `total_records()`: returns the number of records.
 
-## Security and trust limitations
+## Important trust and privacy limitations
 
-- The relay's device token authenticates the ESP32 request to the relay. It is not hardware attestation.
-- A button press proves interaction with the device, not a person's identity or physical location.
-- The contract records the NEAR account that signs the transaction. It does not independently verify who operated the ESP32.
-- The contract method is publicly callable. The restricted relay key limits the relay credential, but does not prevent other accounts from calling the public contract method.
-- The current cooldown is in relay memory and resets when the relay restarts.
-- Never commit secrets or private keys. Rotate any credential that has been exposed.
+- A typed name is an operator-entered label, not cryptographic identity verification.
+- A button press proves interaction with the device, not the participant's physical identity or location.
+- The contract records the NEAR account signing the transaction. In this relay architecture that is the relay account, not the ESP32 or participant.
+- Contract calls are public. The restricted relay key does not prevent other accounts from calling the contract.
+- Pending events and recent activity are held in relay memory and are lost when the relay restarts.
+- The publish endpoint is intended for a controlled local demo, not public internet deployment. Add operator authentication and event-level permissions before production use.
+- On-chain names are publicly readable and cannot be treated as confidential or reliably erased.
 
 ## Verification
 
-After a successful check-in, copy the returned transaction hash and open its testnet explorer URL. The relay's response must contain `onchain: true` and a transaction hash before treating the check-in as anchored on NEAR.
+Use the dashboard's **Verify record** field to query a published event ID. The relay reads the record and participant name directly from NEAR testnet. Each successful publish includes a transaction hash and testnet explorer URL.
