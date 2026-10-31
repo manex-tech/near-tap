@@ -27,7 +27,7 @@ impl Contract {
     }
 
     /// Store a unique presence event. The caller is the NEAR account signing the transaction.
-    pub fn record_presence(&mut self, event_id: String) -> PresenceRecord {
+    pub fn record_presence(&mut self, event_id: String, participant_name: String) -> PresenceRecord {
         assert!(!event_id.trim().is_empty(), "event_id must not be empty");
         assert!(event_id.len() <= 128, "event_id is too long");
         assert!(
@@ -35,13 +35,20 @@ impl Contract {
             "event_id has already been recorded"
         );
 
+        let name = participant_name.trim();
+        assert!(!name.is_empty(), "participant_name must not be empty");
+        assert!(name.len() <= 80, "participant_name is too long");
+
         let record = PresenceRecord {
             event_id: event_id.clone(),
             account_id: env::predecessor_account_id(),
             timestamp_ns: env::block_timestamp(),
         };
 
-        self.records.insert(event_id, record.clone());
+        self.records.insert(event_id.clone(), record.clone());
+        let mut name_key = b"presence_name:".to_vec();
+        name_key.extend_from_slice(event_id.as_bytes());
+        env::storage_write(&name_key, name.as_bytes());
         self.total_records += 1;
         env::log_str("Presence event recorded");
         record
@@ -49,6 +56,12 @@ impl Contract {
 
     pub fn get_presence(&self, event_id: String) -> Option<PresenceRecord> {
         self.records.get(&event_id).cloned()
+    }
+
+    pub fn get_presence_name(&self, event_id: String) -> Option<String> {
+        let mut name_key = b"presence_name:".to_vec();
+        name_key.extend_from_slice(event_id.as_bytes());
+        env::storage_read(&name_key).and_then(|bytes| String::from_utf8(bytes).ok())
     }
 
     pub fn total_records(&self) -> u64 {
@@ -83,7 +96,7 @@ mod tests {
         set_context("alice.near", 123_456);
         let mut contract = Contract::new();
 
-        let saved = contract.record_presence("event-001".to_string());
+        let saved = contract.record_presence("event-001".to_string(), "Alice Example".to_string());
         let fetched = contract.get_presence("event-001".to_string()).unwrap();
 
         assert_eq!(saved.event_id, "event-001");
@@ -91,6 +104,7 @@ mod tests {
         assert_eq!(saved.timestamp_ns, 123_456);
         assert_eq!(fetched.event_id, saved.event_id);
         assert_eq!(fetched.account_id, saved.account_id);
+        assert_eq!(contract.get_presence_name("event-001".to_string()), Some("Alice Example".to_string()));
         assert_eq!(contract.total_records(), 1);
     }
 
@@ -99,7 +113,7 @@ mod tests {
         set_context("bob.near", 987_654);
         let mut contract = Contract::new();
 
-        let saved = contract.record_presence("event-002".to_string());
+        let saved = contract.record_presence("event-002".to_string(), "Bob Example".to_string());
 
         assert_eq!(saved.account_id, "bob.near".parse::<AccountId>().unwrap());
     }
@@ -109,7 +123,7 @@ mod tests {
     fn rejects_duplicate_event_ids() {
         set_context("alice.near", 1);
         let mut contract = Contract::new();
-        contract.record_presence("event-duplicate".to_string());
+        contract.record_presence("event-duplicate".to_string(), "Alice".to_string());
         contract.record_presence("event-duplicate".to_string());
     }
 
@@ -118,7 +132,7 @@ mod tests {
     fn rejects_empty_event_ids() {
         set_context("alice.near", 1);
         let mut contract = Contract::new();
-        contract.record_presence("   ".to_string());
+        contract.record_presence("   ".to_string(), "Alice".to_string());
     }
 
     #[test]
@@ -126,6 +140,6 @@ mod tests {
     fn rejects_event_ids_longer_than_128_bytes() {
         set_context("alice.near", 1);
         let mut contract = Contract::new();
-        contract.record_presence("a".repeat(129));
+        contract.record_presence("a".repeat(129), "Alice".to_string());
     }
 }
