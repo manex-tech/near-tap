@@ -81,10 +81,17 @@ button:disabled{opacity:.6;cursor:wait;transform:none}
 <script>
 const $=id=>document.getElementById(id);
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+let pendingSignature = "";
 function renderPending(items){
  const root=$("pending");
+ const signature=JSON.stringify(items.map(p=>[p.eventId,p.detectedAt]));
+ // The dashboard polls every 10 seconds. Do not rebuild unchanged forms:
+ // replacing their DOM nodes would erase text while an operator is typing.
+ if(signature===pendingSignature)return;
+ const values=new Map([...root.querySelectorAll("form[data-publish]")].map(form=>[form.dataset.publish,form.elements.participantName?.value||""]));
+ pendingSignature=signature;
  if(!items.length){root.innerHTML='<div class="empty">Waiting for a physical check-in. Press the ESP32 button to create one.</div>';return;}
- root.innerHTML=items.map(p=>'<article class="event"><div class="eventtop"><strong>New physical check-in</strong><span class="pill">AWAITING NAME</span></div><div class="mono eventid">'+esc(p.eventId)+'</div><form data-publish="'+esc(p.eventId)+'"><input name="participantName" maxlength="80" placeholder="Participant full name" required autocomplete="off"><button type="submit">Publish to NEAR</button></form><div class="subtle">Detected '+esc(new Date(p.detectedAt).toLocaleString())+'</div></article>').join("");
+ root.innerHTML=items.map(p=>'<article class="event"><div class="eventtop"><strong>New physical check-in</strong><span class="pill">AWAITING NAME</span></div><div class="mono eventid">'+esc(p.eventId)+'</div><form data-publish="'+esc(p.eventId)+'"><input name="participantName" maxlength="80" placeholder="Participant full name" required autocomplete="off" value="'+esc(values.get(p.eventId)||"")+'"><button type="submit">Publish to NEAR</button></form><div class="subtle">Detected '+esc(new Date(p.detectedAt).toLocaleString())+'</div></article>').join("");
  root.querySelectorAll("form[data-publish]").forEach(form=>form.addEventListener("submit",publishAttendance));
 }
 async function publishAttendance(e){
