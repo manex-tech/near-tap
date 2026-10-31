@@ -1,5 +1,7 @@
 # NEAR Tap: Proof of Presence
 
+[![NEAR Tap checks](https://github.com/manex-tech/near-tap/actions/workflows/near-tap.yml/badge.svg)](https://github.com/manex-tech/near-tap/actions/workflows/near-tap.yml)
+
 NEAR Tap is an ESP32-powered attendance prototype that turns a physical check-in into a publicly verifiable record on **NEAR Protocol**.
 
 At the check-in point, an ESP32 sends a device-authenticated event to a Node.js relay. An operator reviews the pending event, enters the participant's name, and explicitly publishes it to a NEAR smart contract. The contract stores the event ID and participant name on-chain, while the dashboard provides a transaction link for independent verification.
