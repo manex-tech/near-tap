@@ -6,6 +6,7 @@ import { connect, keyStores, KeyPair } from "near-api-js";
 
 const PORT = Number(process.env.PORT || 8787);
 const DEVICE_TOKEN = process.env.TAP_DEVICE_TOKEN || "";
+const OPERATOR_SECRET = process.env.TAP_OPERATOR_SECRET || "";
 const NETWORK_ID = process.env.NEAR_NETWORK || "testnet";
 const ACCOUNT_ID = process.env.NEAR_ACCOUNT_ID || "";
 const CONTRACT_ID = process.env.NEAR_CONTRACT_ID || "";
@@ -15,7 +16,7 @@ const COOLDOWN_MS = 30_000;
 const GAS = BigInt("100000000000000");
 const recentEvents = [];
 const pendingEvents = new Map();
-let lastAcceptedAt = 0;
+const lastAcceptedByDevice = new Map();
 let eventCount = 0;
 let requestInFlight = false;
 let nearAccount;
@@ -36,7 +37,7 @@ function equalSecret(a, b) {
 
 async function initialiseNear() {
   if (NETWORK_ID !== "testnet") throw new Error("This prototype is configured for NEAR testnet only.");
-  if (!DEVICE_TOKEN || !ACCOUNT_ID || !CONTRACT_ID || !PRIVATE_KEY) throw new Error("Missing required environment configuration. Check .env.");
+  if (!DEVICE_TOKEN || !OPERATOR_SECRET || !ACCOUNT_ID || !CONTRACT_ID || !PRIVATE_KEY) throw new Error("Missing required environment configuration. Check .env.");
   const keyStore = new keyStores.InMemoryKeyStore();
   await keyStore.setKey(NETWORK_ID, ACCOUNT_ID, KeyPair.fromString(PRIVATE_KEY));
   const near = await connect({ networkId: NETWORK_ID, nodeUrl: RPC_URL, keyStore });
@@ -61,6 +62,21 @@ const server = http.createServer(async (req, res) => {
       name: "NEAR Tap", mode: "near-testnet", onchain: Boolean(nearAccount),
       network: NETWORK_ID, contractId: CONTRACT_ID, eventCount
     });
+  }
+
+  if (req.method === "POST" && url.pathname.startsWith("/api/")) {
+    const origin = req.headers.origin;
+    if (origin && origin !== `http://${req.headers.host}` && origin !== `https://${req.headers.host}`) return send(res, 403, { error: "Cross-origin request rejected." });
+    if (!String(req.headers["content-type"] || "").toLowerCase().startsWith("application/json")) return send(res, 415, { error: "Content-Type must be application/json." });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/session") {
+    let body = "";
+    try { for await (const chunk of req) { body += chunk; if (Buffer.byteLength(body) > 1024) return send(res, 413, { error: "Request too large." }); } }
+    catch { return send(res, 400, { error: "Could not read request body." }); }
+    let data;
+    try { data = JSON.parse(body || "{}"); } catch { return send(res, 400, { error: "Invalid JSON." }); }
+    return equalSecret(data.secret || "", OPERATOR_SECRET) ? send(res, 200, { authenticated: true }) : send(res, 401, { error: "Invalid operator secret." });
   }
 
   if (req.method === "GET" && url.pathname === "/api/dashboard") {
@@ -103,7 +119,7 @@ const server = http.createServer(async (req, res) => {
     try {
       for await (const chunk of req) {
         raw += chunk;
-        if (raw.length > 2048) return send(res, 413, { error: "Request too large." });
+        if (Buffer.byteLength(raw) > 2048) return send(res, 413, { error: "Request too large." });
       }
     } catch { return send(res, 400, { error: "Could not read request body." }); }
     let data;
@@ -112,7 +128,7 @@ const server = http.createServer(async (req, res) => {
     const eventId = String(data.eventId || "").trim();
     const participantName = String(data.participantName || "").trim();
     if (!eventId || eventId.length > 128) return send(res, 400, { error: "Invalid event ID." });
-    if (!participantName || participantName.length > 80) return send(res, 400, { error: "Enter a name of 1 to 80 characters." });
+    if (!participantName || Buffer.byteLength(participantName, "utf8") > 80) return send(res, 400, { error: "Enter a name of 1 to 80 characters." });
     if (!pendingEvents.has(eventId)) return send(res, 404, { error: "This check-in is no longer pending. Refresh the dashboard." });
     requestInFlight = true;
     try {
@@ -146,13 +162,12 @@ const server = http.createServer(async (req, res) => {
   }
   if (!equalSecret(req.headers["x-tap-token"] || "", DEVICE_TOKEN)) return send(res, 401, { error: "Unauthorized device" });
   if (!nearAccount) return send(res, 503, { error: "NEAR relay is not initialised." });
-  if (requestInFlight) return send(res, 429, { error: "A check-in is already being submitted." });
 
   let body = "";
   try {
     for await (const chunk of req) {
       body += chunk;
-      if (body.length > 2048) return send(res, 413, { error: "Request too large" });
+      if (Buffer.byteLength(body) > 2048) return send(res, 413, { error: "Request too large" });
     }
   } catch {
     return send(res, 400, { error: "Could not read request body." });
@@ -166,11 +181,12 @@ const server = http.createServer(async (req, res) => {
     return send(res, 400, { error: "Unexpected presence event" });
   }
   const now = Date.now();
-  if (now - lastAcceptedAt < COOLDOWN_MS) return send(res, 429, { error: "Cooldown active. Wait before checking in again." });
+  const deviceId = String(payload.deviceId);
+  if (now - (lastAcceptedByDevice.get(deviceId) || 0) < COOLDOWN_MS) return send(res, 429, { error: "Device cooldown active. Wait before checking in again." });
   if (pendingEvents.size >= 10) return send(res, 429, { error: "Pending attendance queue is full. Publish or clear a pending check-in first." });
-  lastAcceptedAt = now;
+  lastAcceptedByDevice.set(deviceId, now);
   const eventId = randomUUID();
-  const pending = { eventId, detectedAt: new Date(now).toISOString(), status: "pending" };
+  const pending = { eventId, deviceId, detectedAt: new Date(now).toISOString(), status: "pending" };
   pendingEvents.set(eventId, pending);
   console.log("Physical check-in awaiting participant name:", eventId);
   return send(res, 202, { status: "pending", onchain: false, ...pending, message: "Check-in received. Add the participant name on the dashboard before publishing to NEAR." });
