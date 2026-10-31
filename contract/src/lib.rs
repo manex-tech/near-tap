@@ -124,7 +124,7 @@ mod tests {
         set_context("alice.near", 1);
         let mut contract = Contract::new();
         contract.record_presence("event-duplicate".to_string(), "Alice".to_string());
-        contract.record_presence("event-duplicate".to_string());
+        contract.record_presence("event-duplicate".to_string(), "Alice".to_string());
     }
 
     #[test]
