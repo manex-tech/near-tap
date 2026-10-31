@@ -170,6 +170,7 @@ Create a local `.env` file in the project root. Do not commit this file.
 ```env
 PORT=8787
 TAP_DEVICE_TOKEN=replace_with_a_long_random_device_token
+TAP_OPERATOR_SECRET=replace_with_a_different_long_random_secret
 NEAR_NETWORK=testnet
 NEAR_ACCOUNT_ID=your_testnet_account.testnet
 NEAR_CONTRACT_ID=your_contract_account.testnet
@@ -188,7 +189,7 @@ npm start
 
 Open [http://localhost:8787](http://localhost:8787) on the computer running the relay.
 
-The dashboard and API are served by the Node.js process. The pending queue and recent activity are currently held in memory and are cleared when the relay restarts.
+The dashboard and API are served by the Node.js process. The dashboard prompts for `TAP_OPERATOR_SECRET`; the value is kept in the browser session and sent only to the local relay for operator-only dashboard and publish requests. Set this variable before starting the relay. The pending queue and recent activity are currently held in memory and are cleared when the relay restarts.
 
 ## Configure the ESP32
 
@@ -222,10 +223,10 @@ NEAR Tap demonstrates a hardware-triggered attendance workflow. It does **not** 
 - **The relay signs the transaction.** The on-chain predecessor account identifies the relay account, not the ESP32 or participant.
 - **The contract is publicly callable.** Restricting the relay's function-call key limits that key; it does not prevent other accounts from calling a public contract method.
 - **The queue is temporary.** Pending events and recent activity are stored in relay memory and are lost when the relay restarts.
-- **The publish route needs operator access control.** The current prototype does not provide production-grade operator authentication or event-level permissions. Do not expose it publicly without adding these controls.
+- **The publish route needs operator access control.** The current prototype uses a shared operator secret for dashboard and publish access, but does not provide user accounts, role-based access, or event-level permissions. Do not expose it publicly without adding these controls.
 - **Names are public and persistent.** Anyone may be able to read on-chain names, and blockchain data should not be treated as confidential or reliably erasable.
 
-Before production use, add operator authentication, event-specific authorization and expiry, durable queue storage, stronger device authentication, abuse controls, and a privacy-conscious participant consent process. Consider NFC or another appropriate verification factor if the use case requires stronger evidence than a button press.
+Before production use, add stronger operator authentication and session management, event-specific authorization and expiry, durable queue storage, stronger device authentication, abuse controls, and a privacy-conscious participant consent process. Consider NFC or another appropriate verification factor if the use case requires stronger evidence than a button press.
 
 ## Verify an attendance record
 
