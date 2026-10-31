@@ -24,11 +24,11 @@ cd contract
 cargo test
 ```
 
-**Expected result:** the contract test suite completes successfully. The current source includes tests for initialization, recording and retrieving a record, predecessor attribution, duplicate event rejection, and event-ID validation.
+**Expected result:** the contract test suite completes successfully. The current source includes tests for initialization, recording and retrieving a record, predecessor attribution, duplicate event rejection, event-ID validation, and participant-name validation.
 
 If the Rust toolchain or dependencies are unavailable, record the test as not run. Do not report it as passing.
 
-## 3. Relay and dashboard smoke test
+## 3. Continuous integration\n\nGitHub Actions runs the repository workflow in `.github/workflows/near-tap.yml` on pushes, pull requests, and manual dispatch. It checks the Node.js relay syntax, runs the Rust contract unit tests, checks the WebAssembly target, builds the release Wasm artifact, and uploads that artifact. Review the Actions run for the commit being evaluated; the presence of a workflow file alone is not evidence that a run passed.\n\n## 4. Relay and dashboard smoke test
 
 1. Configure a local `.env` using the root README.
 2. Start the relay with `npm start`.
@@ -37,7 +37,7 @@ If the Rust toolchain or dependencies are unavailable, record the test as not ru
 
 **Expected result:** the dashboard loads, and the health endpoint returns JSON identifying NEAR Tap and its configured network/contract. A healthy HTTP response does not by itself prove that a transaction can be submitted.
 
-## 4. Device authentication check
+## 5. Device authentication check
 
 With the relay running, send a request to `POST /api/presence` without the correct `x-tap-token`.
 
@@ -54,7 +54,7 @@ Then send the expected JSON payload with the configured token:
 
 **Expected result:** the relay responds with HTTP 202 and a pending event ID. This creates a pending event only; it does not submit a blockchain transaction.
 
-## 5. Full hardware-to-chain demonstration
+## 6. Full hardware-to-chain demonstration
 
 Prerequisites: ESP32 firmware configured with the same device token, the relay reachable over the local network, a configured NEAR testnet account, a restricted function-call key with sufficient allowance, and the contract deployed and initialized.
 
@@ -70,7 +70,7 @@ Prerequisites: ESP32 firmware configured with the same device token, the relay r
 
 **Expected result:** the pending event becomes a published record only after NEAR confirms the contract call. The transaction should be inspectable on NEAR Explorer, and the contract lookup should return the event record and participant name.
 
-## 6. Manual acceptance checklist
+## 7. Manual acceptance checklist
 
 | Scenario | Expected behavior |
 |---|---|
@@ -79,14 +79,14 @@ Prerequisites: ESP32 firmware configured with the same device token, the relay r
 | Valid device request | HTTP 202; pending event created |
 | Request during cooldown | HTTP 429 |
 | Pending queue at capacity | HTTP 429 |
-| Empty or overlong participant name | HTTP 400 |
+| Empty or overlong participant name | HTTP 400 |\n| Empty or overlong participant name passed directly to contract | Contract rejects the call |
 | Event ID not in pending queue | HTTP 404 |
 | NEAR transaction succeeds | Published record and transaction hash returned |
 | NEAR transaction fails | Error returned; pending item remains available for retry |
 | Existing event ID submitted directly to contract again | Contract rejects duplicate event ID |
 | Existing on-chain event queried | Contract returns stored record |
 
-## 7. Evidence to attach to a submission
+## 8. Evidence to attach to a submission
 
 For a reproducible judging review, provide:
 - A short video showing the ESP32 button press, pending dashboard event, operator name entry, successful publication, and Explorer transaction.
