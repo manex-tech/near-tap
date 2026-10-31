@@ -12,13 +12,15 @@ NEAR Tap is a testnet prototype. It is not currently suitable for production att
 - The relay applies request-size limits, a cooldown, and a maximum pending-queue size.
 - The relay validates event IDs and participant-name length before publishing.
 - The NEAR signing key is loaded from local environment configuration and is intended to be a restricted function-call key.
+- Dashboard and publish routes require a shared operator secret configured as `TAP_OPERATOR_SECRET`.
+- POST API routes enforce JSON content type and reject cross-origin browser requests.
 - Local `.env` and `firmware/secrets.h` files are ignored by Git.
 
 These controls reduce some accidental or unauthorized use. They do not constitute a complete production security design.
 
 ## Known limitations
 
-1. **No operator authentication on publish:** the current `POST /api/publish` route does not authenticate an operator. Do not expose the relay to an untrusted network.
+1. **Shared-secret operator access:** dashboard and publish routes use one shared secret, not individual accounts, roles, or revocable sessions. Do not expose the relay to an untrusted network.
 2. **Public contract method:** the contract's `record_presence` method is publicly callable. Restricting the relay's function-call key does not prevent another NEAR account from calling the method.
 3. **Shared device token:** a copied token can be reused by another client. The prototype does not implement hardware-backed attestation, per-device key rotation, or a challenge-response protocol.
 4. **No identity proof:** pressing the button only indicates an interaction with the device. The participant name is entered by an operator and is not verified against a person.
