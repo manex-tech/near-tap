@@ -1,19 +1,39 @@
 # NEAR Tap Contract
 
-This directory contains the initial NEAR smart contract source.
+This directory contains the NEAR smart contract for recording and querying unique presence events.
 
-## Status
+## Current status
 
-The contract is source-only at this stage. It has not yet been compiled, tested, or deployed. The root README tracks the project-wide implementation status.
+The contract source includes unit tests for initial state, record creation, record retrieval, caller attribution, duplicate rejection, empty event IDs, and event ID length limits.
 
-## Check the Rust source
+GitHub Actions runs the tests, checks the WebAssembly target, builds a release Wasm binary, and uploads it as the `near-tap-contract-wasm` workflow artifact.
 
-From this directory, run:
+A successful CI build does not mean the contract has been deployed. The contract must still be reviewed, built with the recommended NEAR release tooling if needed, and deployed to NEAR testnet.
+
+## Run tests locally
+
+From this directory:
 
 ```bash
-cargo check
+cargo test
 ```
 
-A successful `cargo check` validates Rust compilation for the host target. It is not a NEAR WASM build and does not deploy the contract.
+## Check and build WebAssembly
 
-Next steps are to add contract unit tests, build the WASM artifact using the NEAR toolchain, and deploy to NEAR testnet.
+```bash
+rustup target add wasm32-unknown-unknown
+cargo check --target wasm32-unknown-unknown
+cargo build --target wasm32-unknown-unknown --release
+```
+
+The release binary is written to:
+
+```
+target/wasm32-unknown-unknown/release/near_tap_contract.wasm
+```
+
+## Security limitations before production
+
+The current contract accepts any unique event ID from any transaction signer. It does not yet validate an event organizer, device signature, event challenge, attendance window, or device authenticity. Therefore, it records a wallet's claim of presence, not independently verified physical attendance.
+
+Do not put NEAR account private keys in the ESP32 firmware or commit them to this repository. Before a public deployment, add an authorization and event-challenge design, then test it on NEAR testnet.
