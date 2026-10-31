@@ -7,7 +7,9 @@ NEAR Tap is a hardware-powered event check-in prototype. An ESP32 sends a device
 - ESP32 BOOT-button check-in: implemented
 - Authenticated Node.js relay: implemented
 - NEAR smart contract: deployed and initialised on NEAR testnet
-- Relay-to-contract transaction submission: implemented; end-to-end hardware verification pending
+- Relay-to-contract transaction submission: verified with a successful ESP32-triggered NEAR testnet transaction
+- Live dashboard: implemented at the relay root URL
+- On-chain event verification: implemented through the contract's `get_presence` view method
 - Public testnet record lookup: available through the contract's `get_presence` view method
 
 A check-in is only reported as successful after the relay receives a successful NEAR transaction result. The response includes the transaction hash and testnet explorer URL.
@@ -69,6 +71,12 @@ http://192.168.1.10:8787/api/presence
 ```
 
 Do not use `localhost` as the ESP32 destination. The computer and ESP32 must be able to reach each other over the local network. Do not commit `secrets.h`.
+
+## Dashboard and verification
+
+Start the relay with `npm start`, then open `http://localhost:8787` in a browser. The dashboard reads the contract's `total_records` value, shows recent check-ins observed during the current relay session, and verifies an event ID directly against `get_presence` on NEAR testnet.
+
+Recent activity is held in relay memory and resets when the process restarts. The contract currently supports lookup by event ID but does not expose a method to enumerate all records. The dashboard therefore does not claim to show a complete historical activity feed.
 
 ## Contract methods
 
